@@ -35,9 +35,9 @@ dir_library_headers = Library_headers
 ## Specific build rules
 .PHONY : install
 install : 
-	install -D ${dir_executables}/apt-get_reinstall-all ${dir_install_prefix}/sbin
-	install -D ${dir_executables}/apt-get_reinstall-all_installAndCleanPackages ${dir_install_prefix}/sbin
-	install -D README.md ${dir_install_prefix}/share/doc/${name_project}/README.md
+	install -D --mode=0755 ${dir_executables}/apt-get_reinstall-all ${dir_install_prefix}/sbin
+	install -D --mode=0755 ${dir_executables}/apt-get_reinstall-all_installAndCleanPackages ${dir_install_prefix}/sbin
+	install -D --mode=0644 README.md ${dir_install_prefix}/share/doc/${name_project}/README.md
 
 .PHONY : uninstall
 uninstall : 
