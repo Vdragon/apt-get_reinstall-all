@@ -67,7 +67,7 @@ function main() {
 		exit 2
 	else
 		local software_packages="${PROGRAM_ARGUMENT_LIST}"
-		apt-get --option Dpkg::Options::="--force-confdef" --option Dpkg::Options::="--force-confold" -y --force-yes install --reinstall ${software_packages}
+		apt-get --option Dpkg::Options::="--force-confdef" --option Dpkg::Options::="--force-confold" --assume-yes --force-yes install --reinstall ${software_packages}
 		apt-get clean
 		exit 0
 	fi
