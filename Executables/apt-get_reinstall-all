@@ -562,7 +562,7 @@ downloadAllPreviouslyInstalledPackagesFromSoftwareSourceGracefully(){
 		printf "DEBUG: ${FUNCNAME[0]}: Working directory is \"%s\".\n" "${PWD}"
 	fi
 
-	printf "%s" "${package_list[*]}" | parallel --no-notice --verbose --delimiter=' ' --max-args=1 --max-procs=${global_download_jobs} -- apt-get download || local -i exit_status=${?}
+	printf "%s" "${package_list[*]}" | parallel --no-notice --verbose --delimiter=' ' --max-args=1 --max-procs="${global_download_jobs}" -- apt-get download || local -i exit_status=${?}
 	if [ ${exit_status} -eq 255 ]; then
 		printf "Download aborted.\n"
 		exit "${RESULT_DOWNLOAD_ABORTED}"
