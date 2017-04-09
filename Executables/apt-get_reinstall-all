@@ -51,7 +51,7 @@ declare -Ar META_RUNTIME_DEPENDENCIES_CRITICAL=(["basename"]="${META_RUNTIME_DEP
 
 ### These are the dependencies that are used later and also checked later
 declare -r META_RUNTIME_DEPENDENCIES_DESCRIPTION_APT="Advanced Packaging Tool"
-declare -Ar META_RUNTIME_DEPENDENCIES=(["apt-get"]="${META_RUNTIME_DEPENDENCIES_DESCRIPTION_APT}", ["dpkg"]="${META_RUNTIME_DEPENDENCIES_DESCRIPTION_APT}", ["grep"]="GNU Grep", ["cut"]="${META_RUNTIME_DEPENDENCIES_DESCRIPTION_GNU_COREUTILS}", ["xargs"]="GNU Findutils", ["parallel"]="GNU Parallel", ["nproc"]="${META_RUNTIME_DEPENDENCIES_DESCRIPTION_GNU_COREUTILS}")
+declare -Ar META_RUNTIME_DEPENDENCIES=(["apt-get"]="${META_RUNTIME_DEPENDENCIES_DESCRIPTION_APT}" ["dpkg"]="${META_RUNTIME_DEPENDENCIES_DESCRIPTION_APT}" ["grep"]="GNU Grep" ["cut"]="${META_RUNTIME_DEPENDENCIES_DESCRIPTION_GNU_COREUTILS}" ["xargs"]="GNU Findutils" ["parallel"]="GNU Parallel" ["nproc"]="${META_RUNTIME_DEPENDENCIES_DESCRIPTION_GNU_COREUTILS}")
 
 ## Common constant definitions
 declare -ir COMMON_RESULT_SUCCESS=0
