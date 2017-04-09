@@ -382,11 +382,17 @@ declare -r \
 	COMMANDLINE_OPTION_DOWNLOAD_JOBS_SHORT="-j"\
 	COMMANDLINE_OPTION_DOWNLOAD_JOBS_DESCRIPTION="Customizing number of download jobs for downloading packages"
 
+declare -r \
+	COMMANDLINE_OPTION_DOWNLOAD_SKIP_LONG="--skip-download"\
+	COMMANDLINE_OPTION_DOWNLOAD_SKIP_SHORT="-s"\
+	COMMANDLINE_OPTION_DOWNLOAD_SKIP_DESCRIPTION="Skip package download process"
+
 ## Program Configuration Variables
 declare -i global_just_show_help=0
 declare -i global_enable_debugging=0
 declare -i global_download_jobs
 global_download_jobs="$(nproc)"
+declare -i global_download_skip=0
 
 ### The temp directory for us to download packages
 ### We don't use /tmp because in some distros it's mounted tmpfs and consuming runtime memory space
@@ -454,6 +460,9 @@ meta_processCommandlineArguments() {
 							# SHIFT 1 element so that there's always remain 1 element in the array to be cleaned by the shift operation below
 							meta_util_array_shift arguments
 						fi
+						;;
+					"${COMMANDLINE_OPTION_DOWNLOAD_SKIP_LONG}"|"${COMMANDLINE_OPTION_DOWNLOAD_SKIP_SHORT}")
+						global_download_skip=1
 						;;
 					*)
 						printf "ERROR: Unknown command-line argument \"%s\"\n" "${arguments[0]}" >&2
@@ -524,6 +533,7 @@ meta_printHelpMessage(){
 	meta_util_printSingleCommandlineOptionHelp "${COMMANDLINE_OPTION_ENABLE_DEBUGGING_DESCRIPTION}" "${COMMANDLINE_OPTION_ENABLE_DEBUGGING_LONG}" "${COMMANDLINE_OPTION_ENABLE_DEBUGGING_SHORT}"
 	meta_util_printSingleCommandlineOptionHelp "${COMMANDLINE_OPTION_WORKING_DIR_DESCRIPTION}" "${COMMANDLINE_OPTION_WORKING_DIR_LONG}" "${COMMANDLINE_OPTION_WORKING_DIR_SHORT}" "${global_working_area_directory}"
 	meta_util_printSingleCommandlineOptionHelp "${COMMANDLINE_OPTION_DOWNLOAD_JOBS_DESCRIPTION}" "${COMMANDLINE_OPTION_DOWNLOAD_JOBS_LONG}" "${COMMANDLINE_OPTION_DOWNLOAD_JOBS_SHORT}" "${global_download_jobs}"
+	meta_util_printSingleCommandlineOptionHelp "${COMMANDLINE_OPTION_DOWNLOAD_SKIP_DESCRIPTION}" "${COMMANDLINE_OPTION_DOWNLOAD_SKIP_LONG}" "${COMMANDLINE_OPTION_DOWNLOAD_SKIP_SHORT}"
 	return "${COMMON_RESULT_SUCCESS}"
 }
 declare -fr meta_printHelpMessage
@@ -557,6 +567,9 @@ declare -fr getDpkgInstalledPackagesList
 # Download all previously installed packages, we don't fail on missing package as there may be package manually installed and not available from source, but do give user warning if we encountered such case.
 downloadAllPreviouslyInstalledPackagesFromSoftwareSourceGracefully(){
 	local -n package_list=${1}
+
+	# apt-get doesn't seemed to support customizing download directory, so we changing our working directory
+	cd "${global_working_area_directory}"
 
 	if [ "${global_enable_debugging}" -eq 1 ]; then
 		printf "DEBUG: ${FUNCNAME[0]}: Working directory is \"%s\".\n" "${PWD}"
@@ -611,15 +624,15 @@ init() {
 		exit "${COMMON_RESULT_SUCCESS}"
 	fi
 
-	declare -a dpkg_installed_packages_list
-	dpkg_installed_packages_list=($(getDpkgInstalledPackagesList))
-	readonly -a dpkg_installed_packages_list
 	createTemporaryDirectory
 
-	# apt-get doesn't seemed to support customizing download directory, so we changing our working directory
-	cd "${global_working_area_directory}"
+	if [ "${global_download_skip}" -ne 1 ]; then
+		declare -a dpkg_installed_packages_list
+		dpkg_installed_packages_list=($(getDpkgInstalledPackagesList))
+		readonly -a dpkg_installed_packages_list
+		downloadAllPreviouslyInstalledPackagesFromSoftwareSourceGracefully dpkg_installed_packages_list
+	fi
 
-	downloadAllPreviouslyInstalledPackagesFromSoftwareSourceGracefully dpkg_installed_packages_list
 	unpackAllDownloadedPackagesUsingDpkg
 	reconfigureDpkg
 
