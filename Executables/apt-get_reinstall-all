@@ -592,14 +592,14 @@ declare -fr downloadAllPreviouslyInstalledPackagesFromSoftwareSourceGracefully
 # Unpack(but not configure) all download packages
 # TODO: Currently this is not enough as the packages will be set to "not configured" state, I wonder if it's possible to achieve "just unpack" mode, which may be enough for certain usecases
 unpackAllDownloadedPackagesUsingDpkg(){
-
+	sudo dpkg --unpack "${global_working_area_directory}"/*.deb
 	return "${COMMON_RESULT_SUCCESS}"
 }
 declare -fr unpackAllDownloadedPackagesUsingDpkg
 
 # Reconfigure packages
 reconfigureDpkg(){
-
+	sudo dpkg --configure -a
 	return "${COMMON_RESULT_SUCCESS}"
 }
 declare -fr reconfigureDpkg
