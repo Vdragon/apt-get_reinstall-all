@@ -445,7 +445,7 @@ meta_processCommandlineArguments() {
 						;;
 					"${COMMANDLINE_OPTION_WORKING_DIR_LONG}"|"${COMMANDLINE_OPTION_WORKING_DIR_SHORT}")
 						if [ "${#arguments[@]}" -eq 1 ]; then
-							printf "ERROR: ${FUNCNAME[0]}: No argument for option %s\n"  "${COMMANDLINE_OPTION_WORKING_DIR_LONG}"
+							printf "ERROR: %s: No argument for option %s\n" "${FUNCNAME[0]}" "${COMMANDLINE_OPTION_WORKING_DIR_LONG}"
 							return ${COMMON_RESULT_FAILURE}
 						else
 							global_working_area_directory="${arguments[1]}"
@@ -455,7 +455,7 @@ meta_processCommandlineArguments() {
 						;;
 					"${COMMANDLINE_OPTION_DOWNLOAD_JOBS_LONG}"|"${COMMANDLINE_OPTION_DOWNLOAD_JOBS_SHORT}")
 						if [ "${#arguments[@]}" -eq 1 ]; then
-							printf "ERROR: ${FUNCNAME[0]}: No argument for option %s\n"  "${COMMANDLINE_OPTION_DOWNLOAD_JOBS_LONG}"
+							printf "ERROR: %s: No argument for option %s\n" "${FUNCNAME[0]}" "${COMMANDLINE_OPTION_DOWNLOAD_JOBS_LONG}"
 							return ${COMMON_RESULT_FAILURE}
 						else
 							global_download_jobs="${arguments[1]}"
