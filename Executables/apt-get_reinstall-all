@@ -621,6 +621,7 @@ downloadAllPreviouslyInstalledPackagesFromSoftwareSourceGracefully(){
 
 	printf "%s" "${package_list[*]}" | parallel --no-notice --verbose --delimiter=' ' --max-args=1 --max-procs="${global_download_jobs}" -- apt-get download || local -i exit_status=${?}
 	if [ ${exit_status} -eq 255 ]; then
+		printf "\n" # Separate with the line with ^C
 		printf "Download aborted.\n"
 		exit "${RESULT_DOWNLOAD_ABORTED}"
 	elif [ ${exit_status} -ne 0 ]; then
