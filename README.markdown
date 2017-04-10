@@ -3,7 +3,7 @@ A script to reinstall all packages installed in system
 <https://github.com/Vdragon/apt-get_reinstall-all>
 
 ## 這是什麼？<br />What is this?
-這是讓 apt-get 強制重新安裝系統目前已經安裝的所有軟體包的程式
+這是讓重新安裝 APT 目前已經安裝的所有軟體包的程式
 
 ## 軟體下載<br />Software download
 您可以下載釋出的軟體於  
