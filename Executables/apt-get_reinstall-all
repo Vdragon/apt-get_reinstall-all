@@ -57,8 +57,10 @@ declare -r META_RUNTIME_DEPENDENCIES_DESCRIPTION_APT="Advanced Packaging Tool"
 declare -Ar META_RUNTIME_DEPENDENCIES=(
 	["apt-get"]="${META_RUNTIME_DEPENDENCIES_DESCRIPTION_APT}"
 	["dpkg"]="${META_RUNTIME_DEPENDENCIES_DESCRIPTION_APT}"
-	["grep"]="GNU Grep" ["cut"]="${META_RUNTIME_DEPENDENCIES_DESCRIPTION_GNU_COREUTILS}"
-	["xargs"]="GNU Findutils" ["parallel"]="GNU Parallel"
+	["grep"]="GNU Grep"
+	["cut"]="${META_RUNTIME_DEPENDENCIES_DESCRIPTION_GNU_COREUTILS}"
+	["xargs"]="GNU Findutils"
+	["parallel"]="GNU Parallel"
 	["nproc"]="${META_RUNTIME_DEPENDENCIES_DESCRIPTION_GNU_COREUTILS}"
 	["sudo"]="sudo"
 )
