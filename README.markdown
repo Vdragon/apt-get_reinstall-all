@@ -19,6 +19,7 @@ You may download software releases at
 * GNU Findutils
 * GNU Grep
 * GNU Parallel
+* sudo
 
 ## 如何安裝？<br />How to install?
 在終端機內於專案根目錄下以 root 身份執行 `make install` 即可安裝  
