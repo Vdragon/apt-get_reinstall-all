@@ -1,4 +1,4 @@
-# apt-get_reinstall-all
+# apt-get reinstall-all
 ## 這是什麼？<br />What is this?
 這是讓 apt-get 強制重新安裝系統目前已經安裝的所有軟體包的程式
 
@@ -18,8 +18,8 @@ You may download software releases at
 Just run `make install` command as root in the terminal in the project's root directory to install apt-get_reinstall-all
 
 ## 如何移除軟體？<br />How to remove software?
-在終端機內於專案根目錄下以 root 身份執行 `make uninstall` 即可移除 apt-get_reinstall-all  
-Just run `make uninstall` command as root in the terminal in the project's root directory to remove apt-get_reinstall-all
+在終端機內於專案根目錄下以 root 身份執行 `make uninstall` 即可移除 apt-get reinstall-all  
+Just run `make uninstall` command as root in the terminal in the project's root directory to remove apt-get reinstall-all
 
 ## 命令語法<br />Command syntax
 `# apt-get_reinstall-all`
