@@ -399,6 +399,10 @@ declare -r \
 	COMMANDLINE_OPTION_INSTALL_PACKAGE_QUANTITY_ONCE_SHORT="-i"\
 	COMMANDLINE_OPTION_INSTALL_PACKAGE_QUANTITY_ONCE_DESCRIPTION="Number of packages to be installed in a single dpkg command.  Note that there's a limitation on how many arguments can be specified in a single command"
 
+declare -r \
+	COMMANDLINE_OPTION_DON_T_CLEAN_DOWNLOADED_PACKAGES_LONG="--don-t-clean-downloaded-packages"\
+	COMMANDLINE_OPTION_DON_T_CLEAN_DOWNLOADED_PACKAGES_SHORT="-nc"\
+	COMMANDLINE_OPTION_DON_T_CLEAN_DOWNLOADED_PACKAGES_DESCRIPTION="By default the previously downloaded packages are removed before downloading, use this option to avoid it.  This option is useful for system not yet upgrade any packages and wish to rerun the process."
 
 ## Program Configuration Variables
 declare -i global_just_show_help="${COMMON_BOOLEAN_FALSE}"
@@ -408,6 +412,7 @@ global_download_jobs="$(nproc)"
 declare -i global_download_skip="${COMMON_BOOLEAN_FALSE}"
 #declare -i global_unpack_quantity_once=100
 declare -i global_install_quantity_once=100
+declare -i global_don_t_clean_downloaded_packages="${COMMON_BOOLEAN_FALSE}"
 
 ### The temp directory for us to download packages
 ### We don't use /tmp because in some distros it's mounted tmpfs and consuming runtime memory space
@@ -497,6 +502,9 @@ meta_processCommandlineArguments() {
 							meta_util_array_shift arguments
 						fi
 						;;
+					"${COMMANDLINE_OPTION_DON_T_CLEAN_DOWNLOADED_PACKAGES_LONG}"|"${COMMANDLINE_OPTION_DON_T_CLEAN_DOWNLOADED_PACKAGES_SHORT}")
+						global_don_t_clean_downloaded_packages="${COMMON_BOOLEAN_TRUE}"
+						;;
 					*)
 						printf "ERROR: Unknown command-line argument \"%s\"\n" "${arguments[0]}" >&2
 						return ${COMMON_RESULT_FAILURE}
@@ -569,6 +577,7 @@ meta_printHelpMessage(){
 	meta_util_printSingleCommandlineOptionHelp "${COMMANDLINE_OPTION_DOWNLOAD_SKIP_DESCRIPTION}" "${COMMANDLINE_OPTION_DOWNLOAD_SKIP_LONG}" "${COMMANDLINE_OPTION_DOWNLOAD_SKIP_SHORT}"
 # 	meta_util_printSingleCommandlineOptionHelp "${COMMANDLINE_OPTION_UNPACK_PACKAGE_QUANTITY_ONCE_DESCRIPTION}" "${COMMANDLINE_OPTION_UNPACK_PACKAGE_QUANTITY_ONCE_LONG}" "${COMMANDLINE_OPTION_UNPACK_PACKAGE_QUANTITY_ONCE_SHORT}" "${global_unpack_quantity_once}"
 	meta_util_printSingleCommandlineOptionHelp "${COMMANDLINE_OPTION_INSTALL_PACKAGE_QUANTITY_ONCE_DESCRIPTION}" "${COMMANDLINE_OPTION_INSTALL_PACKAGE_QUANTITY_ONCE_LONG}" "${COMMANDLINE_OPTION_INSTALL_PACKAGE_QUANTITY_ONCE_SHORT}" "${global_install_quantity_once}"
+	meta_util_printSingleCommandlineOptionHelp "${COMMANDLINE_OPTION_DON_T_CLEAN_DOWNLOADED_PACKAGES_DESCRIPTION}" "${COMMANDLINE_OPTION_DON_T_CLEAN_DOWNLOADED_PACKAGES_LONG}" "${COMMANDLINE_OPTION_DON_T_CLEAN_DOWNLOADED_PACKAGES_SHORT}"
 	return "${COMMON_RESULT_SUCCESS}"
 }
 declare -fr meta_printHelpMessage
@@ -646,6 +655,13 @@ installAllDownloadedPackagesUsingDpkg(){
 }
 declare -fr installAllDownloadedPackagesUsingDpkg
 
+# Delete previously downloaded packages, prevent multiple same package with different version being installed
+cleanWorkingDirectory(){
+	rm "${global_working_area_directory}"/*.deb
+	return "${?}"
+}
+declare -fr cleanWorkingDirectory
+
 ## Defensive Bash Programming - init function, program's entry point
 ## http://www.kfirlavi.com/blog/2012/11/14/defensive-bash-programming/
 init() {
@@ -669,6 +685,10 @@ init() {
 	fi
 
 	createTemporaryDirectory
+
+	if [ "${global_don_t_clean_downloaded_packages}" -ne "${COMMON_BOOLEAN_TRUE}" ]; then
+		cleanWorkingDirectory
+	fi
 
 	if [ "${global_download_skip}" -ne "${COMMON_BOOLEAN_TRUE}" ]; then
 		declare -a dpkg_installed_packages_list
