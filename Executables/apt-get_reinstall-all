@@ -389,10 +389,16 @@ declare -r \
 	COMMANDLINE_OPTION_DOWNLOAD_SKIP_SHORT="-s"\
 	COMMANDLINE_OPTION_DOWNLOAD_SKIP_DESCRIPTION="Skip package download process"
 
+# declare -r \
+# 	COMMANDLINE_OPTION_UNPACK_PACKAGE_QUANTITY_ONCE_LONG="--unpack-quantity-once"\
+# 	COMMANDLINE_OPTION_UNPACK_PACKAGE_QUANTITY_ONCE_SHORT="-u"\
+# 	COMMANDLINE_OPTION_UNPACK_PACKAGE_QUANTITY_ONCE_DESCRIPTION="Number of packages to be unpacked in a single dpkg command.  Note that there's a limitation on how many arguments can be specified in a single command"
+
 declare -r \
-	COMMANDLINE_OPTION_UNPACK_PACKAGE_QUANTITY_ONCE_LONG="--unpack-quantity-once"\
-	COMMANDLINE_OPTION_UNPACK_PACKAGE_QUANTITY_ONCE_SHORT="-u"\
-	COMMANDLINE_OPTION_UNPACK_PACKAGE_QUANTITY_ONCE_DESCRIPTION="Number of packages to be unpacked in a single dpkg command.  Note that there's a limitation on how many arguments can be specified in a single command"
+	COMMANDLINE_OPTION_INSTALL_PACKAGE_QUANTITY_ONCE_LONG="--install-quantity-once"\
+	COMMANDLINE_OPTION_INSTALL_PACKAGE_QUANTITY_ONCE_SHORT="-i"\
+	COMMANDLINE_OPTION_INSTALL_PACKAGE_QUANTITY_ONCE_DESCRIPTION="Number of packages to be installed in a single dpkg command.  Note that there's a limitation on how many arguments can be specified in a single command"
+
 
 ## Program Configuration Variables
 declare -i global_just_show_help="${COMMON_BOOLEAN_FALSE}"
@@ -400,7 +406,8 @@ declare -i global_enable_debugging="${COMMON_BOOLEAN_FALSE}"
 declare -i global_download_jobs
 global_download_jobs="$(nproc)"
 declare -i global_download_skip="${COMMON_BOOLEAN_FALSE}"
-declare -i global_unpack_quantity_once=100
+#declare -i global_unpack_quantity_once=100
+declare -i global_install_quantity_once=100
 
 ### The temp directory for us to download packages
 ### We don't use /tmp because in some distros it's mounted tmpfs and consuming runtime memory space
@@ -472,11 +479,20 @@ meta_processCommandlineArguments() {
 					"${COMMANDLINE_OPTION_DOWNLOAD_SKIP_LONG}"|"${COMMANDLINE_OPTION_DOWNLOAD_SKIP_SHORT}")
 						global_download_skip="${COMMON_BOOLEAN_TRUE}"
 						;;
-					"${COMMANDLINE_OPTION_UNPACK_PACKAGE_QUANTITY_ONCE_LONG}"|"${COMMANDLINE_OPTION_UNPACK_PACKAGE_QUANTITY_ONCE_SHORT}")
+# 					"${COMMANDLINE_OPTION_UNPACK_PACKAGE_QUANTITY_ONCE_LONG}"|"${COMMANDLINE_OPTION_UNPACK_PACKAGE_QUANTITY_ONCE_SHORT}")
+# 						if [ "${#arguments[@]}" -eq 1 ]; then
+# 							printf "ERROR: %s: No argument for option %s\n" "${FUNCNAME[0]}" "${COMMANDLINE_OPTION_UNPACK_PACKAGE_QUANTITY_ONCE_LONG}"
+# 						else
+# 							global_unpack_quantity_once="${arguments[1]}"
+# 							# SHIFT 1 element so that there's always remain 1 element in the array to be cleaned by the shift operation below
+# 							meta_util_array_shift arguments
+# 						fi
+# 						;;
+					"${COMMANDLINE_OPTION_INSTALL_PACKAGE_QUANTITY_ONCE_LONG}"|"${COMMANDLINE_OPTION_INSTALL_PACKAGE_QUANTITY_ONCE_SHORT}")
 						if [ "${#arguments[@]}" -eq 1 ]; then
-							printf "ERROR: %s: No argument for option %s\n" "${FUNCNAME[0]}" "${COMMANDLINE_OPTION_UNPACK_PACKAGE_QUANTITY_ONCE_LONG}"
+							printf "ERROR: %s: No argument for option %s\n" "${FUNCNAME[0]}" "${COMMANDLINE_OPTION_INSTALL_PACKAGE_QUANTITY_ONCE_LONG}"
 						else
-							global_unpack_quantity_once="${arguments[1]}"
+							global_install_quantity_once="${arguments[1]}"
 							# SHIFT 1 element so that there's always remain 1 element in the array to be cleaned by the shift operation below
 							meta_util_array_shift arguments
 						fi
@@ -551,7 +567,8 @@ meta_printHelpMessage(){
 	meta_util_printSingleCommandlineOptionHelp "${COMMANDLINE_OPTION_WORKING_DIR_DESCRIPTION}" "${COMMANDLINE_OPTION_WORKING_DIR_LONG}" "${COMMANDLINE_OPTION_WORKING_DIR_SHORT}" "${global_working_area_directory}"
 	meta_util_printSingleCommandlineOptionHelp "${COMMANDLINE_OPTION_DOWNLOAD_JOBS_DESCRIPTION}" "${COMMANDLINE_OPTION_DOWNLOAD_JOBS_LONG}" "${COMMANDLINE_OPTION_DOWNLOAD_JOBS_SHORT}" "${global_download_jobs}"
 	meta_util_printSingleCommandlineOptionHelp "${COMMANDLINE_OPTION_DOWNLOAD_SKIP_DESCRIPTION}" "${COMMANDLINE_OPTION_DOWNLOAD_SKIP_LONG}" "${COMMANDLINE_OPTION_DOWNLOAD_SKIP_SHORT}"
-	meta_util_printSingleCommandlineOptionHelp "${COMMANDLINE_OPTION_UNPACK_PACKAGE_QUANTITY_ONCE_DESCRIPTION}" "${COMMANDLINE_OPTION_UNPACK_PACKAGE_QUANTITY_ONCE_LONG}" "${COMMANDLINE_OPTION_UNPACK_PACKAGE_QUANTITY_ONCE_SHORT}" "${global_unpack_quantity_once}"
+# 	meta_util_printSingleCommandlineOptionHelp "${COMMANDLINE_OPTION_UNPACK_PACKAGE_QUANTITY_ONCE_DESCRIPTION}" "${COMMANDLINE_OPTION_UNPACK_PACKAGE_QUANTITY_ONCE_LONG}" "${COMMANDLINE_OPTION_UNPACK_PACKAGE_QUANTITY_ONCE_SHORT}" "${global_unpack_quantity_once}"
+	meta_util_printSingleCommandlineOptionHelp "${COMMANDLINE_OPTION_INSTALL_PACKAGE_QUANTITY_ONCE_DESCRIPTION}" "${COMMANDLINE_OPTION_INSTALL_PACKAGE_QUANTITY_ONCE_LONG}" "${COMMANDLINE_OPTION_INSTALL_PACKAGE_QUANTITY_ONCE_SHORT}" "${global_install_quantity_once}"
 	return "${COMMON_RESULT_SUCCESS}"
 }
 declare -fr meta_printHelpMessage
@@ -607,19 +624,27 @@ declare -fr downloadAllPreviouslyInstalledPackagesFromSoftwareSourceGracefully
 
 # Unpack(but not configure) all download packages
 # TODO: Currently this is not enough as the packages will be set to "not configured" state, I wonder if it's possible to achieve "just unpack" mode, which may be enough for certain usecases
-unpackAllDownloadedPackagesUsingDpkg(){
-	find "${global_working_area_directory}" -name '*.deb' -print0\
-		| xargs --max-args="${global_unpack_quantity_once}" --null -- sudo dpkg --unpack
-	return "${COMMON_RESULT_SUCCESS}"
-}
-declare -fr unpackAllDownloadedPackagesUsingDpkg
+# unpackAllDownloadedPackagesUsingDpkg(){
+# 	find "${global_working_area_directory}" -name '*.deb' -print0\
+# 		| xargs --max-args="${global_unpack_quantity_once}" --null -- sudo dpkg --unpack
+# 	return "${COMMON_RESULT_SUCCESS}"
+# }
+# declare -fr unpackAllDownloadedPackagesUsingDpkg
 
 # Reconfigure packages
-reconfigureDpkg(){
-	sudo dpkg --configure -a
+# reconfigureDpkg(){
+# 	sudo dpkg --configure -a
+# 	return "${COMMON_RESULT_SUCCESS}"
+# }
+# declare -fr reconfigureDpkg
+
+# Install all download packages
+installAllDownloadedPackagesUsingDpkg(){
+	find "${global_working_area_directory}" -name '*.deb' -print0\
+		| xargs --max-args="${global_install_quantity_once}" --null -- sudo dpkg --install
 	return "${COMMON_RESULT_SUCCESS}"
 }
-declare -fr reconfigureDpkg
+declare -fr installAllDownloadedPackagesUsingDpkg
 
 ## Defensive Bash Programming - init function, program's entry point
 ## http://www.kfirlavi.com/blog/2012/11/14/defensive-bash-programming/
@@ -652,8 +677,9 @@ init() {
 		downloadAllPreviouslyInstalledPackagesFromSoftwareSourceGracefully dpkg_installed_packages_list
 	fi
 
-	unpackAllDownloadedPackagesUsingDpkg
-	reconfigureDpkg
+# 	unpackAllDownloadedPackagesUsingDpkg
+# 	reconfigureDpkg
+	installAllDownloadedPackagesUsingDpkg
 
 	exit "${COMMON_RESULT_SUCCESS}"
 }
