@@ -375,9 +375,9 @@ declare -r \
 	COMMANDLINE_OPTION_ENABLE_DEBUGGING_DESCRIPTION="Enable debug mode"
 
 declare -r \
-	COMMANDLINE_OPTION_WORKING_DIR_LONG="--working-area-directory"\
-	COMMANDLINE_OPTION_WORKING_DIR_SHORT="-w"\
-	COMMANDLINE_OPTION_WORKING_DIR_DESCRIPTION="Customizing temporary directory for downloading packages"
+	COMMANDLINE_OPTION_DOWNLOAD_DIR_LONG="--download-directory"\
+	COMMANDLINE_OPTION_DOWNLOAD_DIR_SHORT="-w"\
+	COMMANDLINE_OPTION_DOWNLOAD_DIR_DESCRIPTION="Customizing location for downloading packages"
 
 declare -r \
 	COMMANDLINE_OPTION_DOWNLOAD_JOBS_LONG="--download-jobs"\
@@ -417,7 +417,7 @@ declare -i global_don_t_clean_downloaded_packages="${COMMON_BOOLEAN_FALSE}"
 ### The temp directory for us to download packages
 ### We don't use /tmp because in some distros it's mounted tmpfs and consuming runtime memory space
 ### We don't use /var/cache/apt/archives because it will intefere with previously download packages, which may be undesirable to be cleaned-up beforehand
-declare global_working_area_directory="${SDC_TEMP_DIR}"
+declare global_download_area_directory="${SDC_TEMP_DIR}"
 
 ## Drop first element from array and shift remaining elements 1 element backward
 meta_util_array_shift(){
@@ -461,12 +461,12 @@ meta_processCommandlineArguments() {
 					"${COMMANDLINE_OPTION_ENABLE_DEBUGGING_LONG}"|"${COMMANDLINE_OPTION_ENABLE_DEBUGGING_SHORT}")
 						global_enable_debugging="${COMMON_BOOLEAN_TRUE}"
 						;;
-					"${COMMANDLINE_OPTION_WORKING_DIR_LONG}"|"${COMMANDLINE_OPTION_WORKING_DIR_SHORT}")
+					"${COMMANDLINE_OPTION_DOWNLOAD_DIR_LONG}"|"${COMMANDLINE_OPTION_DOWNLOAD_DIR_SHORT}")
 						if [ "${#arguments[@]}" -eq 1 ]; then
-							printf "ERROR: %s: No argument for option %s\n" "${FUNCNAME[0]}" "${COMMANDLINE_OPTION_WORKING_DIR_LONG}"
+							printf "ERROR: %s: No argument for option %s\n" "${FUNCNAME[0]}" "${COMMANDLINE_OPTION_DOWNLOAD_DIR_LONG}"
 							return ${COMMON_RESULT_FAILURE}
 						else
-							global_working_area_directory="${arguments[1]}"
+							global_download_area_directory="${arguments[1]}"
 							# SHIFT 1 element so that there's always remain 1 element in the array to be cleaned by the shift operation below
 							meta_util_array_shift arguments
 						fi
@@ -572,7 +572,7 @@ meta_printHelpMessage(){
 	printf "## Command-line Options ##\n"
 	meta_util_printSingleCommandlineOptionHelp "${COMMANDLINE_OPTION_DISPLAY_HELP_DESCRIPTION}" "${COMMANDLINE_OPTION_DISPLAY_HELP_LONG}" "${COMMANDLINE_OPTION_DISPLAY_HELP_SHORT}"
 	meta_util_printSingleCommandlineOptionHelp "${COMMANDLINE_OPTION_ENABLE_DEBUGGING_DESCRIPTION}" "${COMMANDLINE_OPTION_ENABLE_DEBUGGING_LONG}" "${COMMANDLINE_OPTION_ENABLE_DEBUGGING_SHORT}"
-	meta_util_printSingleCommandlineOptionHelp "${COMMANDLINE_OPTION_WORKING_DIR_DESCRIPTION}" "${COMMANDLINE_OPTION_WORKING_DIR_LONG}" "${COMMANDLINE_OPTION_WORKING_DIR_SHORT}" "${global_working_area_directory}"
+	meta_util_printSingleCommandlineOptionHelp "${COMMANDLINE_OPTION_DOWNLOAD_DIR_DESCRIPTION}" "${COMMANDLINE_OPTION_DOWNLOAD_DIR_LONG}" "${COMMANDLINE_OPTION_DOWNLOAD_DIR_SHORT}" "${global_download_area_directory}"
 	meta_util_printSingleCommandlineOptionHelp "${COMMANDLINE_OPTION_DOWNLOAD_JOBS_DESCRIPTION}" "${COMMANDLINE_OPTION_DOWNLOAD_JOBS_LONG}" "${COMMANDLINE_OPTION_DOWNLOAD_JOBS_SHORT}" "${global_download_jobs}"
 	meta_util_printSingleCommandlineOptionHelp "${COMMANDLINE_OPTION_DOWNLOAD_SKIP_DESCRIPTION}" "${COMMANDLINE_OPTION_DOWNLOAD_SKIP_LONG}" "${COMMANDLINE_OPTION_DOWNLOAD_SKIP_SHORT}"
 # 	meta_util_printSingleCommandlineOptionHelp "${COMMANDLINE_OPTION_UNPACK_PACKAGE_QUANTITY_ONCE_DESCRIPTION}" "${COMMANDLINE_OPTION_UNPACK_PACKAGE_QUANTITY_ONCE_LONG}" "${COMMANDLINE_OPTION_UNPACK_PACKAGE_QUANTITY_ONCE_SHORT}" "${global_unpack_quantity_once}"
@@ -582,16 +582,16 @@ meta_printHelpMessage(){
 }
 declare -fr meta_printHelpMessage
 
-createTemporaryDirectory(){
-	mkdir --parent --verbose "${global_working_area_directory}"
+createDownloadDirectory(){
+	mkdir --parent --verbose "${global_download_area_directory}"
 	if [ ${?} -ne 0 ]; then
-		printf "ERROR: %s: Failed to create temporary directory." "${FUNCNAME[0]}" 1>&2
+		printf "ERROR: %s: Failed to create download directory." "${FUNCNAME[0]}" 1>&2
 		return "${COMMON_RESULT_FAILURE}"
 	else
 		return "${COMMON_RESULT_SUCCESS}"
 	fi
 }
-declare -fr createTemporaryDirectory
+declare -fr createDownloadDirectory
 
 ## Print a list of packages(separated with newline) using Dpkg utitlity
 getDpkgInstalledPackagesList(){
@@ -612,11 +612,11 @@ declare -fr getDpkgInstalledPackagesList
 downloadAllPreviouslyInstalledPackagesFromSoftwareSourceGracefully(){
 	local -n package_list=${1}
 
-	# apt-get doesn't seemed to support customizing download directory, so we changing our working directory
-	cd "${global_working_area_directory}"
+	# apt-get doesn't seemed to support customizing download directory, so we change it manually
+	cd "${global_download_area_directory}"
 
 	if [ "${global_enable_debugging}" -eq "${COMMON_BOOLEAN_TRUE}" ]; then
-		printf "DEBUG: ${FUNCNAME[0]}: Working directory is \"%s\".\n" "${PWD}"
+		printf "DEBUG: ${FUNCNAME[0]}: Download directory is \"%s\".\n" "${PWD}"
 	fi
 
 	printf "%s" "${package_list[*]}" | parallel --no-notice --verbose --delimiter=' ' --max-args=1 --max-procs="${global_download_jobs}" -- apt-get download || local -i exit_status=${?}
@@ -634,7 +634,7 @@ declare -fr downloadAllPreviouslyInstalledPackagesFromSoftwareSourceGracefully
 # Unpack(but not configure) all download packages
 # TODO: Currently this is not enough as the packages will be set to "not configured" state, I wonder if it's possible to achieve "just unpack" mode, which may be enough for certain usecases
 # unpackAllDownloadedPackagesUsingDpkg(){
-# 	find "${global_working_area_directory}" -name '*.deb' -print0\
+# 	find "${global_download_area_directory}" -name '*.deb' -print0\
 # 		| xargs --max-args="${global_unpack_quantity_once}" --null -- sudo dpkg --unpack
 # 	return "${COMMON_RESULT_SUCCESS}"
 # }
@@ -649,18 +649,18 @@ declare -fr downloadAllPreviouslyInstalledPackagesFromSoftwareSourceGracefully
 
 # Install all download packages
 installAllDownloadedPackagesUsingDpkg(){
-	find "${global_working_area_directory}" -name '*.deb' -print0\
+	find "${global_download_area_directory}" -name '*.deb' -print0\
 		| xargs --max-args="${global_install_quantity_once}" --null -- sudo dpkg --install
 	return "${COMMON_RESULT_SUCCESS}"
 }
 declare -fr installAllDownloadedPackagesUsingDpkg
 
 # Delete previously downloaded packages, prevent multiple same package with different version being installed
-cleanWorkingDirectory(){
-	rm "${global_working_area_directory}"/*.deb
+cleanDownloadDirectory(){
+	rm "${global_download_area_directory}"/*.deb
 	return "${?}"
 }
-declare -fr cleanWorkingDirectory
+declare -fr cleanDownloadDirectory
 
 ## Defensive Bash Programming - init function, program's entry point
 ## http://www.kfirlavi.com/blog/2012/11/14/defensive-bash-programming/
@@ -684,10 +684,10 @@ init() {
 		exit "${COMMON_RESULT_SUCCESS}"
 	fi
 
-	createTemporaryDirectory
+	createDownloadDirectory
 
 	if [ "${global_don_t_clean_downloaded_packages}" -ne "${COMMON_BOOLEAN_TRUE}" ]; then
-		cleanWorkingDirectory
+		cleanDownloadDirectory
 	fi
 
 	if [ "${global_download_skip}" -ne "${COMMON_BOOLEAN_TRUE}" ]; then
