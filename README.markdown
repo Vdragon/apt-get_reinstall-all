@@ -15,6 +15,10 @@ You may download software releases at
   GNU Bash shell
 * APT 軟體包管理系統  
   APT software package management system
+* GNU Coreutils
+* GNU Findutils
+* GNU Grep
+* GNU Parallel
 
 ## 如何安裝？<br />How to install?
 在終端機內於專案根目錄下以 root 身份執行 `make install` 即可安裝  
